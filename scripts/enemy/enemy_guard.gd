@@ -5,10 +5,10 @@ extends CharacterBody2D
 enum State { IDLE, PATROL, CHASE, MAINTAIN_DISTANCE, ATTACK, STUNNED, DEAD }
 
 var current_state: State = State.IDLE
-var current_health: float = 80.0
-var max_health: float = 80.0
+var current_health: float = 45.0
+var max_health: float = 45.0
 var move_speed: float = 60.0
-var attack_damage: float = 15.0
+var attack_damage: float = 10.0
 var knockback_resist: float = 2.0
 var detection_range: float = 350.0
 var ideal_distance: float = 150.0  # 和玩家保持的理想距离

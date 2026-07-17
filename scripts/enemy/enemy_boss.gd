@@ -4,9 +4,9 @@ extends CharacterBody2D
 
 enum BossPhase { PHASE1, PHASE2 }
 
-var current_health: float = 500.0
-var max_health: float = 500.0
-var attack_damage: float = 25.0
+var current_health: float = 300.0
+var max_health: float = 300.0
+var attack_damage: float = 18.0
 var move_speed: float = 150.0
 var knockback_resist: float = 5.0
 var detection_range: float = 500.0

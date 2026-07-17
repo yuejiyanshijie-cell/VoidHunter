@@ -5,8 +5,8 @@ extends CharacterBody2D
 enum State { IDLE, PATROL, CHASE, ATTACK, STUNNED, DEAD }
 
 var current_state: State = State.IDLE
-var current_health: float = 30.0
-var max_health: float = 30.0
+var current_health: float = 20.0
+var max_health: float = 20.0
 var move_speed: float = 120.0
 var attack_damage: float = 10.0
 var knockback_resist: float = 0.5

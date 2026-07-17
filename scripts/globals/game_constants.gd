@@ -32,8 +32,8 @@ const PLAYER_MAX_HEALTH := 100.0
 # =============================================================================
 # 战斗属性
 # =============================================================================
-const ATTACK_DAMAGE_LIGHT := 10.0
-const ATTACK_DAMAGE_HEAVY := 25.0
+const ATTACK_DAMAGE_LIGHT := 15.0
+const ATTACK_DAMAGE_HEAVY := 35.0
 const ATTACK_DAMAGE_DOWNSTRIKE := 18.0
 const DODGE_DURATION := 0.3
 const DODGE_COOLDOWN := 0.5
@@ -42,12 +42,12 @@ const DODGE_INVINCIBLE_TIME := 0.2
 # =============================================================================
 # 技能属性
 # =============================================================================
-const SKILL1_DAMAGE := 20.0
+const SKILL1_DAMAGE := 30.0
 const SKILL1_KNOCKBACK := 400.0
 const SKILL1_COOLDOWN := 3.0
 const SKILL1_RANGE := 150.0
 
-const SKILL2_DAMAGE := 35.0
+const SKILL2_DAMAGE := 45.0
 const SKILL2_RANGE := 120.0
 const SKILL2_COOLDOWN := 8.0
 const SKILL2_DURATION := 2.0
@@ -56,16 +56,16 @@ const SKILL2_DURATION := 2.0
 # 敌人属性
 # =============================================================================
 const ENEMY_BUG_SPEED := 120.0
-const ENEMY_BUG_HEALTH := 30.0
+const ENEMY_BUG_HEALTH := 20.0
 const ENEMY_BUG_DAMAGE := 10.0
 
 const ENEMY_GUARD_SPEED := 60.0
-const ENEMY_GUARD_HEALTH := 80.0
-const ENEMY_GUARD_DAMAGE := 15.0
+const ENEMY_GUARD_HEALTH := 45.0
+const ENEMY_GUARD_DAMAGE := 10.0
 
 const ENEMY_BOSS_SPEED := 150.0
-const ENEMY_BOSS_HEALTH := 500.0
-const ENEMY_BOSS_DAMAGE := 25.0
+const ENEMY_BOSS_HEALTH := 300.0
+const ENEMY_BOSS_DAMAGE := 18.0
 
 # =============================================================================
 # 输入缓存
