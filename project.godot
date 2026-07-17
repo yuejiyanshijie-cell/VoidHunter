@@ -19,14 +19,19 @@ config/features=PackedStringArray("4.7")
 
 [autoload]
 
-EventBus="*res://scripts/cs/EventBus.cs"
-GameManager="*res://scripts/cs/GameManager.cs"
+GameConstants="*res://scripts/globals/game_constants.gd"
+EventBus="*res://scripts/globals/event_bus.gd"
+GameManager="*res://scripts/globals/game_manager.gd"
 
 [display]
 
 window/size/viewport_width=960
 window/size/viewport_height=540
 window/stretch/mode="canvas_items"
+
+[dotnet]
+
+project/assembly_name="Void Hunter"
 
 [input]
 
