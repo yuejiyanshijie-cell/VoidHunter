@@ -32,6 +32,12 @@ var attack_combo: int = 0
 var can_attack: bool = true
 var is_dodging: bool = false
 var dodge_cooldown_timer: float = 0.0
+var is_parrying: bool = false
+var parry_window: float = 0.0
+const PARRY_STUN_DURATION: float = 1.5
+const PARRY_WINDOW_TIME: float = 0.1
+var invincibility_time: float = GameConstants.PLAYER_DASH_DURATION * 1.1
+var _inv_timer: float = 0.0
 
 # 子节点引用
 @onready var wall_detector: RayCast2D = $WallDetector
@@ -186,6 +192,13 @@ func _update_timers(delta: float) -> void:
 	dash_cooldown_timer = move_toward(dash_cooldown_timer, 0, delta)
 	dodge_cooldown_timer = move_toward(dodge_cooldown_timer, 0, delta)
 	wall_jump_timer = move_toward(wall_jump_timer, 0, delta)
+	parry_window = move_toward(parry_window, 0, delta)
+	if is_parrying and parry_window <= 0:
+		is_parrying = false
+	if _inv_timer > 0:
+		_inv_timer -= delta
+		if _inv_timer <= 0 and hurtbox and not is_dodging:
+			hurtbox.monitoring = true
 
 	if jump_buffer_timer > 0:
 		jump_buffer_timer -= delta
@@ -431,7 +444,7 @@ func _dash_attack_hit_check() -> void:
 			if enemy is CharacterBody2D:
 				enemy.velocity.x += kb * 350
 				enemy.velocity.y -= 120
-			_spawn_hit_fx(enemy.global_position)
+			_spawn_hit_fx(enemy.global_position, enemy)
 			EventBus.damage_number_request.emit(current_atk_dmg, enemy.global_position, true)
 
 	if hit_count > 0:
@@ -575,7 +588,7 @@ func _attack_hit_check() -> void:
 			enemy.take_damage(current_atk_dmg, self)
 			attack_hit_list.append(enemy)
 			hit_count += 1
-			_spawn_hit_fx(enemy.global_position)
+			_spawn_hit_fx(enemy.global_position, enemy)
 			# 连击击退递增
 			var kb := KNOCKBACK_BASE + KNOCKBACK_PER_COMBO * attack_combo
 			if enemy is CharacterBody2D:
@@ -722,7 +735,7 @@ func _heavy_hit_check() -> void:
 			var kb: float = sign(enemy.global_position.x - global_position.x)
 			if enemy is CharacterBody2D:
 				enemy.velocity.x += kb * 500
-			_spawn_hit_fx(enemy.global_position)
+			_spawn_hit_fx(enemy.global_position, enemy)
 			EventBus.damage_number_request.emit(current_atk_dmg, enemy.global_position, true)
 
 	if hit_count > 0:
@@ -781,7 +794,7 @@ func _cancel_attack() -> void:
 # =============================================================================
 # 特效生成
 # =============================================================================
-func _spawn_hit_fx(pos: Vector2) -> void:
+func _spawn_hit_fx(pos: Vector2, enemy: Node2D = null) -> void:
 	# 命中火花
 	for _i: int in range(5):
 		var spark := ColorRect.new()
@@ -796,6 +809,12 @@ func _spawn_hit_fx(pos: Vector2) -> void:
 		s.parallel().tween_property(spark, "color:a", 0.0, 0.25)
 		s.parallel().tween_property(spark, "size", Vector2.ZERO, 0.25)
 		s.tween_callback(spark.queue_free)
+	# 敌人白色闪光
+		if enemy:
+			enemy.modulate = Color(2, 2, 2, 1)
+			await get_tree().create_timer(0.05).timeout
+			if is_instance_valid(enemy):
+				enemy.modulate = Color(1, 1, 1, 1)
 
 	# 圆形波纹
 	var ripple := ColorRect.new()
@@ -898,7 +917,7 @@ func _skill_mech_blast() -> void:
 				if enemy is CharacterBody2D:
 					enemy.velocity.x += facing_direction * GameConstants.SKILL1_KNOCKBACK
 				EventBus.damage_number_request.emit(GameConstants.SKILL1_DAMAGE, enemy.global_position, false)
-				_spawn_hit_fx(enemy.global_position)
+				_spawn_hit_fx(enemy.global_position, enemy)
 		EventBus.screen_shake_request.emit(4.0, 0.08)
 	)
 
@@ -939,7 +958,7 @@ func _skill_void_slash() -> void:
 				enemy.take_damage(GameConstants.SKILL2_DAMAGE, self)
 				hit_count += 1
 				EventBus.damage_number_request.emit(GameConstants.SKILL2_DAMAGE, enemy.global_position, false)
-				_spawn_hit_fx(enemy.global_position)
+				_spawn_hit_fx(enemy.global_position, enemy)
 		if hit_count > 0:
 			EventBus.screen_shake_request.emit(5.0, 0.1)
 			EventBus.time_scale_request.emit(0.6, 0.05)
