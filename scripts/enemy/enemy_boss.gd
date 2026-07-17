@@ -24,6 +24,7 @@ var charge_speed: float = 400.0
 var is_charging: bool = false
 var jump_timer: float = 0.0
 var next_action_time: float = 0.0
+var ground_slam_phase: int = 0
 
 # 视觉
 var _body: ColorRect
@@ -161,10 +162,12 @@ func _decide_action() -> void:
 		# 近距离 → 攻击
 		if current_phase == BossPhase.PHASE2 and rand_val < 0.4:
 			current_action = "area_blast"
-		elif rand_val < 0.5:
+		elif rand_val < 0.35:
 			current_action = "charge"
-		else:
+		elif rand_val < 0.7:
 			current_action = "slam"
+		else:
+			current_action = "ground_slam"
 
 	action_timer = randf_range(0.5, 1.5)
 
@@ -181,6 +184,8 @@ func _execute_action(delta: float) -> void:
 			_execute_slam()
 		"area_blast":
 			_execute_area_blast()
+		"ground_slam":
+			_execute_ground_slam(delta)
 
 
 func _execute_charge() -> void:
@@ -246,6 +251,28 @@ func _execute_area_blast() -> void:
 	)
 	current_action = "idle"
 	action_timer = 2.0
+
+
+func _execute_ground_slam(delta: float) -> void:
+	if not player_ref:
+		return
+
+	# 跳起 → 砸地 → 冲击波
+	if ground_slam_phase == 0:
+		velocity.y = -650
+		velocity.x = sign(player_ref.global_position.x - global_position.x) * 150
+		ground_slam_phase = 1
+	elif ground_slam_phase == 1:
+		if is_on_floor():
+			velocity = Vector2.ZERO
+			ground_slam_phase = 2
+			# 落地AOE伤害
+			if global_position.distance_to(player_ref.global_position) < 90:
+				player_ref.take_damage(attack_damage * 1.3, self)
+				EventBus.screen_shake_request.emit(9.0, 0.2)
+			current_action = "idle"
+			action_timer = 1.5
+			ground_slam_phase = 0
 
 
 func _enter_phase2() -> void:

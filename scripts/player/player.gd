@@ -70,6 +70,14 @@ var is_holding: bool = false
 var is_heavy_stage: int = 0  # 0=无, 1=蓄力中, 2=前摇, 3=判定, 4=后摇
 var heavy_hit_done: bool = false
 
+# 冲刺攻击
+const DASH_ATTACK_BONUS: float = 1.6
+var has_dash_attacked: bool = false
+
+# 击退参数（随连击递增）
+const KNOCKBACK_BASE: float = 120.0
+const KNOCKBACK_PER_COMBO: float = 80.0
+
 
 # =============================================================================
 # 生命周期
@@ -347,14 +355,101 @@ func _spawn_dash_trail() -> void:
 
 func _end_dash() -> void:
 	is_dashing = false
+	has_dash_attacked = false
 	velocity.x = input_direction * speed
+
+# =============================================================================
+# 冲刺攻击
+# =============================================================================
+func _start_dash_attack() -> void:
+	is_attacking = true
+	can_attack = false
+	has_dash_attacked = true
+	attack_hit_list.clear()
+	attack_timer = 0.22
+	current_atk_dmg = GameConstants.ATTACK_DAMAGE_LIGHT * DASH_ATTACK_BONUS
+	combo_window_timer = 0
+
+	# 冲刺中出刀：短暂加速 + 旋转斩
+	velocity.x = facing_direction * GameConstants.PLAYER_DASH_SPEED * 1.15
+	_sword.color = Color(0.5, 0.35, 1)
+
+	# 旋转斩视觉效果
+	_start_dash_slash_animation()
+
+	# 命中判定
+	get_tree().create_timer(0.05).timeout.connect(_dash_attack_hit_check)
+
+	# 回刀
+	get_tree().create_timer(attack_timer).timeout.connect(func():
+		is_attacking = false
+		_sword.color = Color(0.7, 0.7, 0.85)
+		_reset_attack_state()
+	)
+
+func _start_dash_slash_animation() -> void:
+	# 360° 刀光环
+	var ring := ColorRect.new()
+	ring.size = Vector2(8, 8)
+	ring.position = global_position + Vector2(facing_direction * 8, -20)
+	ring.pivot_offset = Vector2(-facing_direction * 8, 0)
+	ring.color = Color(0.6, 0.4, 1, 0.7)
+	ring.z_index = 5
+	get_parent().add_child(ring)
+
+	var r := create_tween()
+	r.tween_property(ring, "rotation", facing_direction * TAU, 0.18)
+	r.parallel().tween_property(ring, "size", Vector2(60, 60), 0.15)
+	r.parallel().tween_property(ring, "color:a", 0.0, 0.18)
+	r.tween_callback(ring.queue_free)
+
+	# 刀身振动
+	var s := create_tween()
+	s.tween_property(_sword, "position:x", 8 + facing_direction * 8, 0.04)
+	s.tween_property(_sword, "position:x", 8, 0.12)
+
+func _dash_attack_hit_check() -> void:
+	if not is_attacking:
+		return
+
+	var attack_range := 36.0
+	var hit_count := 0
+
+	var enemies := get_tree().get_nodes_in_group("enemy")
+	for enemy: Node2D in enemies:
+		if not is_instance_valid(enemy) or enemy in attack_hit_list:
+			continue
+		if not enemy.has_method("take_damage"):
+			continue
+		var dist := global_position.distance_to(enemy.global_position)
+		if dist < attack_range:
+			enemy.take_damage(current_atk_dmg, self)
+			attack_hit_list.append(enemy)
+			hit_count += 1
+			var kb: float = sign(enemy.global_position.x - global_position.x)
+			if kb == 0: kb = facing_direction
+			if enemy is CharacterBody2D:
+				enemy.velocity.x += kb * 350
+				enemy.velocity.y -= 120
+			_spawn_hit_fx(enemy.global_position)
+			EventBus.damage_number_request.emit(current_atk_dmg, enemy.global_position, true)
+
+	if hit_count > 0:
+		EventBus.screen_shake_request.emit(4.5, 0.08)
+		EventBus.time_scale_request.emit(0.55, 0.05)
+		EventBus.hit_effect_request.emit(global_position, "void_slash")
 
 
 # =============================================================================
 # 攻击系统
 # =============================================================================
 func _on_attack_press() -> void:
-	if not can_attack or is_dashing:
+	if not can_attack:
+		return
+
+	# 冲刺攻击 — 可在冲刺中出刀，附加50%伤害
+	if is_dashing and not has_dash_attacked:
+		_start_dash_attack()
 		return
 
 	# 空中 → 下劈
@@ -481,11 +576,19 @@ func _attack_hit_check() -> void:
 			attack_hit_list.append(enemy)
 			hit_count += 1
 			_spawn_hit_fx(enemy.global_position)
+			# 连击击退递增
+			var kb := KNOCKBACK_BASE + KNOCKBACK_PER_COMBO * attack_combo
+			if enemy is CharacterBody2D:
+				enemy.velocity.x += facing_direction * kb
 			EventBus.damage_number_request.emit(current_atk_dmg, enemy.global_position, attack_combo == 2)
 
 	if hit_count > 0:
-		EventBus.screen_shake_request.emit(2.0 + attack_combo * 2, 0.05)
-		EventBus.time_scale_request.emit(0.8, 0.03)
+		# 第三段额外震屏+顿帧
+		var shake_amp := 2.0 + attack_combo * 2.5
+		var shake_dur := 0.05 + attack_combo * 0.02
+		var hitstop_scale: float = 0.85 - attack_combo * 0.15
+		EventBus.screen_shake_request.emit(shake_amp, shake_dur)
+		EventBus.time_scale_request.emit(hitstop_scale, 0.03 + attack_combo * 0.02)
 	else:
 		# 空挥特效
 		_spawn_whiff_fx(global_position + Vector2(facing_direction * 20, -15))
@@ -623,8 +726,8 @@ func _heavy_hit_check() -> void:
 			EventBus.damage_number_request.emit(current_atk_dmg, enemy.global_position, true)
 
 	if hit_count > 0:
-		EventBus.screen_shake_request.emit(6.0, 0.12)
-		EventBus.time_scale_request.emit(0.5, 0.06)
+		EventBus.screen_shake_request.emit(8.0, 0.15)
+		EventBus.time_scale_request.emit(0.3, 0.08)
 	else:
 		_spawn_whiff_fx(global_position + Vector2(facing_direction * 25, -10))
 
