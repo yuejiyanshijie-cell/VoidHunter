@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy/enemy_boss.gd" id="1_boss_script"]
+
+[sub_resource type="RectangleShape2D" id="boss_shape"]
+size = Vector2(40, 30)
+
+[node name="EnemyBoss" type="CharacterBody2D" groups=["enemy"]]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_boss_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("boss_shape")

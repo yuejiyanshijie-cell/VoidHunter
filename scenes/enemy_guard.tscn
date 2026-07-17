@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy/enemy_guard.gd" id="1_guard_script"]
+
+[sub_resource type="RectangleShape2D" id="guard_shape"]
+size = Vector2(22, 22)
+
+[node name="EnemyGuard" type="CharacterBody2D" groups=["enemy"]]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_guard_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("guard_shape")

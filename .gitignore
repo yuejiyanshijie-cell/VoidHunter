@@ -1,0 +1,13 @@
+# Godot editor cache
+.godot/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# User-specific
+*.uid
