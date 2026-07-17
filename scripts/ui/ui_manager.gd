@@ -1,7 +1,6 @@
 # ui_manager.gd - UI管理器
 extends CanvasLayer
 
-# UI 元素（延迟查找，避免路径错误崩溃）
 var health_bar: ProgressBar
 var health_label: Label
 var skill1_label: Label
@@ -9,12 +8,13 @@ var skill2_label: Label
 var skill1_icon: TextureRect
 var skill2_icon: TextureRect
 var game_over_label: Label
+var restart_label: Label
+var orb_label: Label
 
 
 func _ready() -> void:
 	_find_ui_elements()
 
-	# 初始化显示
 	if health_bar:
 		health_bar.max_value = GameConstants.PLAYER_MAX_HEALTH
 		health_bar.value = GameConstants.PLAYER_MAX_HEALTH
@@ -24,10 +24,10 @@ func _ready() -> void:
 	EventBus.player_health_changed.connect(_on_health_changed)
 	EventBus.skill_cooldown_updated.connect(_on_cooldown_updated)
 	EventBus.player_died.connect(_on_player_died)
+	EventBus.orb_collected.connect(_on_orb_collected)
 
 
 func _find_ui_elements() -> void:
-	# 安全查找：通过递归搜索
 	var h_box: HBoxContainer = _find_child_of_type(self, "HBoxContainer")
 	if not h_box:
 		push_warning("[UI] HBoxContainer not found — UI disabled")
@@ -91,6 +91,18 @@ func _on_cooldown_updated(skill_id: int, remaining: float, _total: float) -> voi
 		icon.modulate = Color(0.5, 0.5, 0.5, 1) if remaining > 0 else Color.WHITE
 
 
+func _on_orb_collected(total: int) -> void:
+	if not orb_label:
+		orb_label = Label.new()
+		orb_label.text = "💎 0"
+		orb_label.add_theme_font_size_override("font_size", 16)
+		orb_label.add_theme_color_override("font_color", Color(0.3, 0.6, 1, 1))
+		orb_label.position = Vector2(10, 10)
+		orb_label.z_index = 200
+		add_child(orb_label)
+	orb_label.text = "💎 " + str(total)
+
+
 func _on_player_died() -> void:
 	if game_over_label:
 		return
@@ -99,5 +111,14 @@ func _on_player_died() -> void:
 	game_over_label.add_theme_font_size_override("font_size", 48)
 	game_over_label.add_theme_color_override("font_color", Color.RED)
 	game_over_label.anchors_preset = Control.PRESET_CENTER
+	game_over_label.z_index = 300
 	add_child(game_over_label)
-	print("[UI] Game Over displayed")
+
+	restart_label = Label.new()
+	restart_label.text = "按 空格/攻击键 重新开始"
+	restart_label.add_theme_font_size_override("font_size", 18)
+	restart_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	restart_label.anchors_preset = Control.PRESET_CENTER
+	restart_label.position = Vector2(0, 40)
+	restart_label.z_index = 300
+	add_child(restart_label)

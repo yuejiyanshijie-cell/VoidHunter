@@ -22,6 +22,11 @@ var player_health: float = GameConstants.PLAYER_MAX_HEALTH
 var player_max_health: float = GameConstants.PLAYER_MAX_HEALTH
 
 # =============================================================================
+# 收集品
+# =============================================================================
+var orb_count: int = 0
+
+# =============================================================================
 # 技能冷却计时器
 # =============================================================================
 var skill_cooldowns: Dictionary = {
@@ -34,7 +39,11 @@ var skill_cooldowns: Dictionary = {
 # 生命周期
 # =============================================================================
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS  # 暂停时也运行
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	EventBus.orb_collected.connect(_on_orb_collected)
+
+func _on_orb_collected(_total: int) -> void:
+	orb_count += 1
 
 
 func _process(delta: float) -> void:
@@ -81,6 +90,17 @@ func use_skill(skill_id: int) -> bool:
 	EventBus.player_skill_used.emit(skill_id)
 	return true
 
+
+func restart_game() -> void:
+	player_health = player_max_health
+	orb_count = 0
+	skill_cooldowns = {
+		1: {"remaining": 0.0, "total": GameConstants.SKILL1_COOLDOWN},
+		2: {"remaining": 0.0, "total": GameConstants.SKILL2_COOLDOWN}
+	}
+	current_state = GameState.PLAYING
+	Engine.time_scale = 1.0
+	EventBus.game_restarted.emit()
 
 func _update_cooldowns(delta: float) -> void:
 	for skill_id in skill_cooldowns:

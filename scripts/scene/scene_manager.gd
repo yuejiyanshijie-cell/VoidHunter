@@ -9,15 +9,24 @@ extends Node2D
 @onready var enemy_container: Node = $EnemyContainer
 @onready var level_builder: Node2D = $LevelBuilder
 
+var player_instance: CharacterBody2D = null
+
 
 func _ready() -> void:
-	# 关卡已通过场景中的LevelBuilder节点构建
 	if combat_system_node.has_method("initialize"):
 		combat_system_node.initialize(self, camera)
 
 	_spawn_player()
 	_spawn_test_enemies()
 	EventBus.level_loaded.emit("demo_level")
+	EventBus.player_died.connect(_on_player_died)
+	EventBus.game_restarted.connect(_on_game_restarted)
+
+
+func _process(_delta: float) -> void:
+	if GameManager.current_state == GameManager.GameState.GAME_OVER:
+		if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("attack"):
+			GameManager.restart_game()
 
 
 func _spawn_player() -> void:
@@ -25,11 +34,11 @@ func _spawn_player() -> void:
 		push_error("Player scene not assigned!")
 		return
 
-	var player: CharacterBody2D = player_scene.instantiate()
-	player.global_position = player_spawn.global_position if player_spawn else Vector2(100, 420)
-	add_child(player)
-	player.add_to_group("player")
-	camera.set("follow_target", player)
+	player_instance = player_scene.instantiate()
+	player_instance.global_position = player_spawn.global_position if player_spawn else Vector2(100, 420)
+	add_child(player_instance)
+	player_instance.add_to_group("player")
+	camera.set("follow_target", player_instance)
 
 	var ui_scene: PackedScene = load("res://scenes/ui.tscn")
 	var ui_instance: CanvasLayer = ui_scene.instantiate()
@@ -41,7 +50,6 @@ func _spawn_test_enemies() -> void:
 	var guard: PackedScene = load("res://scenes/enemy_guard.tscn")
 	var boss: PackedScene = load("res://scenes/enemy_boss.tscn")
 
-	# 机械虫群
 	var e1: CharacterBody2D = bugs.instantiate()
 	e1.global_position = Vector2(350, 440)
 	enemy_container.add_child(e1)
@@ -54,7 +62,6 @@ func _spawn_test_enemies() -> void:
 	e3.global_position = Vector2(650, 440)
 	enemy_container.add_child(e3)
 
-	# 能量守卫（远程）
 	var g1: CharacterBody2D = guard.instantiate()
 	g1.global_position = Vector2(900, 440)
 	enemy_container.add_child(g1)
@@ -63,10 +70,17 @@ func _spawn_test_enemies() -> void:
 	g2.global_position = Vector2(1300, 430)
 	enemy_container.add_child(g2)
 
-	# Boss
 	var b1: CharacterBody2D = boss.instantiate()
 	b1.global_position = Vector2(1700, 430)
 	enemy_container.add_child(b1)
+
+
+func _on_player_died() -> void:
+	GameManager.set_state(GameManager.GameState.GAME_OVER)
+
+
+func _on_game_restarted() -> void:
+	get_tree().reload_current_scene()
 
 
 func transition_to_scene(scene_path: String) -> void:

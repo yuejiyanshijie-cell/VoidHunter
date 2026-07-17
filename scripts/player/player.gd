@@ -44,12 +44,13 @@ var _inv_timer: float = 0.0
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 
-# 占位视觉
-var _body: ColorRect
-var _sword: ColorRect
-var _eye: ColorRect
-var _slash_fx: ColorRect   # 斩击特效层
-var _trail_container: Node2D
+	# 占位视觉
+	var _body: ColorRect
+	var _sword: ColorRect
+	var _eye: ColorRect
+	var _slash_fx: ColorRect   # 斩击特效层
+	var _trail_container: Node2D
+	var _orb_count: int = 0
 
 # =============================================================================
 # 攻击参数
@@ -92,6 +93,10 @@ func _ready() -> void:
 	_create_visual()
 	EventBus.player_damaged.connect(_on_damaged)
 	EventBus.player_died.connect(_on_died)
+	
+	# 检测收集品和死亡区域
+	hurtbox.area_entered.connect(_on_area_entered)
+	hurtbox.body_entered.connect(_on_body_entered)
 
 
 func _process(delta: float) -> void:
@@ -985,6 +990,34 @@ func _on_died() -> void:
 	current_state = PlayerState.DEAD
 	velocity = Vector2.ZERO
 
+
+func _on_area_entered(area: Area2D) -> void:
+	if area.has_meta("death_zone"):
+		GameManager.damage_player(9999, self)
+	elif area.has_meta("is_orb"):
+		_collect_orb(area)
+
+func _on_body_entered(body: Node2D) -> void:
+	if body is StaticBody2D and body.has_meta("is_spike"):
+		GameManager.damage_player(20, body)
+		velocity.y = -300
+		_modulate_hurt()
+
+func _modulate_hurt() -> void:
+	var t: Tween = create_tween()
+	t.tween_property(_body, "modulate", Color.RED, 0.05)
+	t.tween_property(_body, "modulate", Color.WHITE, 0.1)
+
+func _collect_orb(orb: Area2D) -> void:
+	orb.queue_free()
+	_orb_count += 1
+	EventBus.orb_collected.emit(_orb_count)
+	var t: Tween = create_tween()
+	t.tween_property(_eye, "color", Color(0, 1, 0.8, 1), 0.1)
+	t.tween_property(_eye, "color", Color(0, 0.85, 1, 1), 0.3)
+
+func get_orb_count() -> int:
+	return _orb_count
 
 func take_damage(amount: float, source: Node2D) -> void:
 	if is_dodging or is_dashing:

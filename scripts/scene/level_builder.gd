@@ -301,3 +301,68 @@ func _create_atmosphere() -> void:
 	mist.color = Color(0.03, 0.02, 0.08, 0.3)
 	mist.z_index = -2
 	add_child(mist)
+
+	# 掉落死亡区域
+	var death_zone: Area2D = Area2D.new()
+	death_zone.name = "DeathZone"
+	var dz_coll: CollisionShape2D = CollisionShape2D.new()
+	var dz_shape: RectangleShape2D = RectangleShape2D.new()
+	dz_shape.size = Vector2(GROUND_WIDTH, 80)
+	dz_coll.shape = dz_shape
+	death_zone.add_child(dz_coll)
+	death_zone.position = Vector2(GROUND_WIDTH / 2, GROUND_Y + GROUND_HEIGHT + 40)
+	death_zone.set_meta("death_zone", true)
+	add_child(death_zone)
+
+	# 收集品（能量球）
+	var orb_positions: Array[Vector2] = [
+		Vector2(450, 420),
+		Vector2(750, 340),
+		Vector2(1100, 320),
+		Vector2(1600, 240),
+		Vector2(2100, 330),
+		Vector2(2800, 260),
+		Vector2(3400, 200),
+		Vector2(5100, 280),
+		Vector2(6000, 240),
+		Vector2(7000, 340),
+	]
+	for pos: Vector2 in orb_positions:
+		_create_orb(pos)
+
+func _create_orb(pos: Vector2) -> void:
+	var orb: Area2D = Area2D.new()
+	orb.name = "EnergyOrb"
+	orb.position = pos
+	orb.set_meta("is_orb", true)
+
+	var coll: CollisionShape2D = CollisionShape2D.new()
+	var shape: CircleShape2D = CircleShape2D.new()
+	shape.radius = 6
+	coll.shape = shape
+	orb.add_child(coll)
+
+	var vis: ColorRect = ColorRect.new()
+	vis.size = Vector2(8, 8)
+	vis.position = Vector2(-4, -4)
+	vis.color = Color(0.3, 0.6, 1, 0.9)
+	vis.z_index = 2
+	orb.add_child(vis)
+
+	# 发光光晕
+	var glow: ColorRect = ColorRect.new()
+	glow.size = Vector2(14, 14)
+	glow.position = Vector2(-7, -7)
+	glow.color = Color(0.2, 0.4, 1, 0.25)
+	glow.z_index = 1
+	orb.add_child(glow)
+
+	# 呼吸动画
+	var t: Tween = create_tween().set_loops()
+	t.tween_property(vis, "modulate:a", 0.5, 0.8)
+	t.tween_property(vis, "modulate:a", 0.9, 0.8)
+	var t2: Tween = create_tween().set_loops()
+	t2.tween_property(glow, "size", Vector2(18, 18), 1.0)
+	t2.tween_property(glow, "size", Vector2(14, 14), 1.0)
+
+	add_child(orb)
