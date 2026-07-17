@@ -44,13 +44,13 @@ var _inv_timer: float = 0.0
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 
-	# 占位视觉
-	var _body: ColorRect
-	var _sword: ColorRect
-	var _eye: ColorRect
-	var _slash_fx: ColorRect   # 斩击特效层
-	var _trail_container: Node2D
-	var _orb_count: int = 0
+# 占位视觉
+var _body: ColorRect
+var _sword: ColorRect
+var _eye: ColorRect
+var _slash_fx: ColorRect   # 斩击特效层
+var _trail_container: Node2D
+var _orb_count: int = 0
 
 # =============================================================================
 # 攻击参数

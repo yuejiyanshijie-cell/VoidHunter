@@ -45,12 +45,12 @@ signal game_paused(paused: bool)
 ## 屏幕震动 (amplitude, duration)
 signal screen_shake_request(amplitude: float, duration: float)
 ## 时间缩放 (scale, duration)
-	signal time_scale_request(scale: float, duration: float)
+signal time_scale_request(scale: float, duration: float)
 
 # =============================================================================
 # 收集品事件
 # =============================================================================
 ## 能量球收集 (total_count)
-	signal orb_collected(total_count: int)
+signal orb_collected(total_count: int)
 ## 游戏重启
-	signal game_restarted()
+signal game_restarted()
