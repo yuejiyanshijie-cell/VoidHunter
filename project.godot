@@ -19,9 +19,8 @@ config/features=PackedStringArray("4.7")
 
 [autoload]
 
-GameConstants="*res://scripts/globals/game_constants.gd"
-EventBus="*res://scripts/globals/event_bus.gd"
-GameManager="*res://scripts/globals/game_manager.gd"
+EventBus="*res://scripts/cs/EventBus.cs"
+GameManager="*res://scripts/cs/GameManager.cs"
 
 [display]
 
